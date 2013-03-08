@@ -37,7 +37,6 @@ import org.eclipse.jetty.webapp.JettyWebXmlConfiguration;
 import org.eclipse.jetty.webapp.MetaInfConfiguration;
 import org.eclipse.jetty.webapp.TagLibConfiguration;
 import org.eclipse.jetty.webapp.WebAppContext;
-import org.eclipse.jetty.webapp.WebXmlConfiguration;
 
 /**
  * JettyWebAppContext
@@ -63,14 +62,16 @@ public class JettyWebAppContext
     private boolean unpackOverlays;
 
     private ArtifactData warArtifact;
+    private WebXmlConfiguration webXmlConfiguration;
 
     public JettyWebAppContext ()
         throws Exception
     {
         super();
+        webXmlConfiguration = new WebXmlConfiguration();
         setConfigurations(new Configuration[]{
                 new MavenWebInfConfiguration(),
-                new WebXmlConfiguration(),
+                webXmlConfiguration,
                 new MetaInfConfiguration(),
                 new FragmentConfiguration(),
                 envConfig = new EnvConfiguration(),
@@ -147,6 +148,16 @@ public class JettyWebAppContext
         webInfJars.addAll(jars);
     }
 
+    public String getWebXml()
+    {
+      return webXmlConfiguration.getCustomWebXml();
+    }
+
+    public void setWebXml(String webXml)
+    {
+      webXmlConfiguration.setCustomWebXml(webXml);
+    }
+
     /* ------------------------------------------------------------ */
     /**
      * This method is provided as a conveniance for jetty maven plugin configuration
@@ -159,8 +170,9 @@ public class JettyWebAppContext
         for (String rl:resourceBases)
         {
             String[] rs = rl.split(" *, *");
-            for (String r:rs)
-                resources.add(r);
+            for (String r:rs) {
+              resources.add(r);
+            }
         }
 
         setBaseResource(new ResourceCollection(resources.toArray(new String[resources.size()])));
@@ -171,6 +183,7 @@ public class JettyWebAppContext
         return webInfJars;
     }
 
+    @Override
     public void doStart () throws Exception
     {
         // Initialize map containing all jars in /WEB-INF/lib
@@ -179,16 +192,19 @@ public class JettyWebAppContext
         {
             // Return all jar files from class path
             String fileName = file.getName();
-            if (fileName.endsWith(".jar"))
-                webInfJarMap.put(fileName, file);
+            if (fileName.endsWith(".jar")) {
+              webInfJarMap.put(fileName, file);
+            }
         }
 
-        if (this.jettyEnvXml != null)
-            envConfig.setJettyEnvXml(new File(this.jettyEnvXml).toURL());
+        if (this.jettyEnvXml != null) {
+          envConfig.setJettyEnvXml(new File(this.jettyEnvXml).toURL());
+        }
         setShutdown(false);
         super.doStart();
     }
 
+    @Override
     public void doStop () throws Exception
     {
         setShutdown(true);
@@ -233,13 +249,16 @@ public class JettyWebAppContext
                 else if (uri.startsWith(WEB_INF_LIB_PREFIX))
                 {
                     String jarName = uri.replace(WEB_INF_LIB_PREFIX, "");
-                    if (jarName.startsWith("/") || jarName.startsWith("\\"))
-                        jarName = jarName.substring(1);
-                    if (jarName.length()==0)
-                        return null;
+                    if (jarName.startsWith("/") || jarName.startsWith("\\")) {
+                      jarName = jarName.substring(1);
+                    }
+                    if (jarName.length()==0) {
+                      return null;
+                    }
                     File jarFile = webInfJarMap.get(jarName);
-                    if (jarFile != null)
-                        return Resource.newResource(jarFile.getPath());
+                    if (jarFile != null) {
+                      return Resource.newResource(jarFile.getPath());
+                    }
 
                     return null;
                 }
